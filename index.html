@@ -6771,6 +6771,32 @@
                     </div>
                 </div>
             `).join('');
+
+            // 댓글이 있는 방문 기록은 자동으로 펼치기
+            visits.forEach(visit => {
+                loadAndShowCommentsIfExist(visit.id);
+            });
+        }
+
+        // 댓글이 있으면 자동으로 로드하고 펼치기
+        async function loadAndShowCommentsIfExist(visitId) {
+            try {
+                const { data, error, count } = await supabaseClient
+                    .from('comments')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('visit_record_id', visitId);
+
+                if (!error && count > 0) {
+                    // 댓글이 있으면 로드하고 펼치기
+                    await loadComments(visitId);
+                    const commentsEl = document.getElementById(`comments-${visitId}`);
+                    if (commentsEl) {
+                        commentsEl.style.display = 'block';
+                    }
+                }
+            } catch (err) {
+                console.error('댓글 확인 실패:', err);
+            }
         }
 
         // Render calendar
