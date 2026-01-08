@@ -4781,9 +4781,9 @@
             }
         }
 
-        // 관리자/대표 권한 체크 (전체 접근 가능)
+        // 관리자 권한 체크 (전체 접근 가능)
         function isAdmin() {
-            return currentUser && (currentUser.role === '관리자' || currentUser.role === '대표');
+            return currentUser && currentUser.role === '관리자';
         }
 
         // ===== 사진 관련 함수 =====
@@ -5235,9 +5235,9 @@
 
         // 담당자 관리 페이지 표시
         async function showUsersPage() {
-            // 관리자/대표만 접근 가능
+            // 관리자만 접근 가능
             if (!isAdmin()) {
-                alert('관리자 또는 대표만 접근할 수 있습니다.');
+                alert('관리자만 접근할 수 있습니다.');
                 return;
             }
 
