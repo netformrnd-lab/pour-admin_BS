@@ -5673,15 +5673,30 @@
                 const { data, error } = await supabaseClient
                     .from('users')
                     .select('id, name, role')
-                    .in('role', ['대표', '팀장'])
-                    .order('name');
+                    .in('role', ['대표', '팀장']);
 
                 if (error) throw error;
+
+                // 원하는 순서로 정렬: 이승우, 황윤선, 조재연, 한준엽, 이필선, 김성민
+                const orderMap = {
+                    '이승우': 1,
+                    '황윤선': 2,
+                    '조재연': 3,
+                    '한준엽': 4,
+                    '이필선': 5,
+                    '김성민': 6
+                };
+                
+                const sortedData = data.sort((a, b) => {
+                    const orderA = orderMap[a.name] || 99;
+                    const orderB = orderMap[b.name] || 99;
+                    return orderA - orderB;
+                });
 
                 const managerFilter = document.getElementById('managerFilter');
                 const calendarManagerFilter = document.getElementById('calendarManagerFilter');
                 
-                const options = data.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+                const options = sortedData.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
                 
                 if (managerFilter) {
                     managerFilter.innerHTML = `<option value="">전체 담당자</option>${options}`;
