@@ -1738,7 +1738,6 @@
             color: var(--text-secondary);
             font-weight: 500;
             cursor: pointer;
-            margin-bottom: 16px;
             padding: 8px 0;
             transition: color 0.2s ease;
         }
@@ -1750,6 +1749,53 @@
         .back-button svg {
             width: 20px;
             height: 20px;
+        }
+
+        /* 상단 바 (뒤로가기 + 시크릿 모드) */
+        .detail-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        /* 시크릿 모드 버튼 */
+        .secret-mode-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .secret-mode-btn:hover {
+            background: var(--bg-card);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .secret-mode-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .secret-mode-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* 시크릿 모드 활성화 시 댓글 숨김 */
+        .secret-mode .visit-comments,
+        .secret-mode .visit-action-btn:last-child {
+            display: none !important;
         }
 
         /* ===== Detail Header ===== */
@@ -3349,12 +3395,19 @@
                         <option value="대구">대구</option>
                         <option value="대전">대전</option>
                         <option value="광주">광주</option>
+                        <option value="세종">세종</option>
+                        <option value="충남">충남</option>
+                        <option value="울산">울산</option>
                     </select>
                     <select class="filter-select" id="statusFilter">
                         <option value="">전체 상태</option>
                         <option value="정상">정상</option>
                         <option value="추적 필요">추적 필요</option>
                         <option value="재방문 필요">재방문 필요</option>
+                    </select>
+                    <select class="filter-select" id="managerFilter">
+                        <option value="">전체 담당자</option>
+                        <!-- 담당자 목록은 동적으로 로드 -->
                     </select>
                 </div>
 
@@ -3372,6 +3425,10 @@
                         <p class="page-subtitle" id="calendarPageSubtitle">전체 담당 단지 일정을 확인하세요</p>
                     </div>
                     <div class="header-actions">
+                        <select class="filter-select" id="calendarManagerFilter" style="margin-right: 8px;">
+                            <option value="">전체 담당자</option>
+                            <!-- 담당자 목록은 동적으로 로드 -->
+                        </select>
                         <button class="btn btn-secondary" onclick="goToToday()">
                             오늘
                         </button>
@@ -3518,11 +3575,20 @@
 
             <!-- Detail Page -->
             <div class="detail-page" id="detailPage">
-                <div class="back-button" onclick="showMainPage()">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                    </svg>
-                    단지 목록으로
+                <div class="detail-top-bar">
+                    <div class="back-button" onclick="showMainPage()">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                        단지 목록으로
+                    </div>
+                    <button class="secret-mode-btn" id="secretModeBtn" onclick="toggleSecretMode()">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                        <span id="secretModeText">고객용 뷰어</span>
+                    </button>
                 </div>
 
                 <!-- Detail Header -->
@@ -4786,6 +4852,26 @@
             return currentUser && currentUser.role === '관리자';
         }
 
+        // ===== 시크릿 모드 (고객용 뷰어) =====
+        let secretModeActive = false;
+
+        function toggleSecretMode() {
+            secretModeActive = !secretModeActive;
+            const detailPage = document.getElementById('detailPage');
+            const btn = document.getElementById('secretModeBtn');
+            const text = document.getElementById('secretModeText');
+
+            if (secretModeActive) {
+                detailPage.classList.add('secret-mode');
+                btn.classList.add('active');
+                text.textContent = '고객용 뷰어 ON';
+            } else {
+                detailPage.classList.remove('secret-mode');
+                btn.classList.remove('active');
+                text.textContent = '고객용 뷰어';
+            }
+        }
+
         // ===== 사진 관련 함수 =====
         // 사진 미리보기
         function previewPhotos(input, previewId) {
@@ -5191,6 +5277,7 @@
             const listEl = document.getElementById('dashRecentVisits');
 
             try {
+                // 모든 계정에서 전체 방문 기록 조회 가능
                 let query = supabaseClient
                     .from('visit_records')
                     .select(`
@@ -5200,11 +5287,6 @@
                     `)
                     .order('visit_date', { ascending: false })
                     .limit(10);
-
-                // 관리자/대표가 아니면 본인 방문 기록만
-                if (!isAdmin()) {
-                    query = query.eq('visitor_id', currentUser.id);
-                }
 
                 const { data, error } = await query;
 
@@ -5532,11 +5614,7 @@
             document.getElementById('userRole').textContent = isAdmin() ? currentUser.role : '사후관리팀 ' + currentUser.role;
             
             // 페이지 서브타이틀 업데이트
-            if (isAdmin()) {
-                document.getElementById('pageSubtitle').textContent = '전국 관리 단지 현황을 한눈에 확인하세요';
-            } else {
-                document.getElementById('pageSubtitle').textContent = `${currentUser.name}님의 담당 단지`;
-            }
+            document.getElementById('pageSubtitle').textContent = '전국 관리 단지 현황을 한눈에 확인하세요';
             
             // 데이터 로드
             await loadComplexes();
@@ -5548,6 +5626,7 @@
         // ===== 단지 목록 로드 (DB) =====
         async function loadComplexes() {
             try {
+                // 모든 계정에서 전체 단지 조회 가능
                 let query = supabaseClient
                     .from('complexes')
                     .select(`
@@ -5555,11 +5634,6 @@
                         manager:users!complexes_manager_id_fkey(id, name, phone)
                     `)
                     .order('name');
-
-                // 관리자/대표가 아니면 본인 담당 단지만
-                if (!isAdmin()) {
-                    query = query.eq('manager_id', currentUser.id);
-                }
 
                 const { data, error } = await query;
 
@@ -5585,8 +5659,38 @@
                 renderComplexGrid(complexData);
                 setupSearch();
                 updateStats();
+                
+                // 담당자 필터 옵션 로드
+                await loadManagerFilter();
             } catch (err) {
                 console.error('단지 로드 실패:', err);
+            }
+        }
+
+        // ===== 담당자 필터 옵션 로드 =====
+        async function loadManagerFilter() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('users')
+                    .select('id, name, role')
+                    .in('role', ['대표', '팀장'])
+                    .order('name');
+
+                if (error) throw error;
+
+                const managerFilter = document.getElementById('managerFilter');
+                const calendarManagerFilter = document.getElementById('calendarManagerFilter');
+                
+                const options = data.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+                
+                if (managerFilter) {
+                    managerFilter.innerHTML = `<option value="">전체 담당자</option>${options}`;
+                }
+                if (calendarManagerFilter) {
+                    calendarManagerFilter.innerHTML = `<option value="">전체 담당자</option>${options}`;
+                }
+            } catch (err) {
+                console.error('담당자 목록 로드 실패:', err);
             }
         }
 
@@ -6149,8 +6253,9 @@
         let mainCalendarMonth = new Date();
 
         // 전체 일정 로드 (담당자 기준 모든 단지)
-        async function loadAllSchedules() {
+        async function loadAllSchedules(filterManagerId = null) {
             try {
+                // 모든 계정에서 전체 일정 조회 가능
                 let query = supabaseClient
                     .from('schedules')
                     .select(`
@@ -6160,9 +6265,9 @@
                     `)
                     .order('schedule_date', { ascending: true });
 
-                // 관리자/대표가 아니면 본인 일정만
-                if (!isAdmin()) {
-                    query = query.eq('user_id', currentUser.id);
+                // 담당자 필터 적용
+                if (filterManagerId) {
+                    query = query.eq('user_id', filterManagerId);
                 }
 
                 const { data, error } = await query;
@@ -6177,13 +6282,24 @@
 
         // 메인 캘린더 렌더링
         async function renderMainCalendar() {
-            const schedules = await loadAllSchedules();
+            const calendarManagerFilter = document.getElementById('calendarManagerFilter');
+            const filterManagerId = calendarManagerFilter ? calendarManagerFilter.value : '';
+            
+            const schedules = await loadAllSchedules(filterManagerId);
             const monthEl = document.getElementById('mainCalendarMonth');
             const gridEl = document.getElementById('mainCalendarGrid');
             
             if (monthEl && gridEl) {
                 renderCalendarNew(schedules, monthEl, gridEl, mainCalendarMonth, true);
                 renderScheduleList(schedules, 'mainScheduleList', mainCalendarMonth);
+            }
+        }
+
+        // 캘린더 담당자 필터 이벤트
+        function setupCalendarManagerFilter() {
+            const calendarManagerFilter = document.getElementById('calendarManagerFilter');
+            if (calendarManagerFilter) {
+                calendarManagerFilter.addEventListener('change', renderMainCalendar);
             }
         }
 
@@ -6354,7 +6470,7 @@
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 
-                // 일정 데이터 가져오기
+                // 모든 계정에서 전체 일정 알림 조회 가능
                 let query = supabaseClient
                     .from('schedules')
                     .select(`
@@ -6363,11 +6479,6 @@
                         complex:complexes!schedules_complex_id_fkey(id, name)
                     `)
                     .order('schedule_date', { ascending: true });
-
-                // 관리자/대표가 아니면 본인 일정만
-                if (!isAdmin()) {
-                    query = query.eq('user_id', currentUser.id);
-                }
 
                 const { data, error } = await query;
                 if (error) throw error;
@@ -6467,22 +6578,23 @@
         */
 
         // Update stats based on actual data
-        function updateStats() {
-            const total = complexData.length;
-            const normal = complexData.filter(c => c.status === '정상').length;
-            const tracking = complexData.filter(c => c.status === '추적 필요').length;
-            const revisit = complexData.filter(c => c.status === '재방문 필요').length;
+        function updateStats(filteredData = null) {
+            const data = filteredData || complexData;
+            const total = data.length;
+            const normal = data.filter(c => c.status === '정상').length;
+            const tracking = data.filter(c => c.status === '추적 필요').length;
+            const revisit = data.filter(c => c.status === '재방문 필요').length;
             
             document.getElementById('statTotal').textContent = total;
             document.getElementById('statNormal').textContent = normal;
-            document.getElementById('statNormalPercent').textContent = Math.round(normal / total * 100) + '%';
+            document.getElementById('statNormalPercent').textContent = total > 0 ? Math.round(normal / total * 100) + '%' : '0%';
             document.getElementById('statTracking').textContent = tracking;
             document.getElementById('statRevisit').textContent = revisit;
             
             // Hide urgent label if no revisit needed
             const revisitLabel = document.getElementById('statRevisitLabel');
-            if (revisit === 0) {
-                revisitLabel.style.display = 'none';
+            if (revisitLabel) {
+                revisitLabel.style.display = revisit === 0 ? 'none' : 'block';
             }
         }
 
@@ -6546,26 +6658,33 @@
             const searchInput = document.getElementById('searchInput');
             const regionFilter = document.getElementById('regionFilter');
             const statusFilter = document.getElementById('statusFilter');
+            const managerFilter = document.getElementById('managerFilter');
 
             const filterData = () => {
                 const searchTerm = searchInput.value.toLowerCase();
                 const region = regionFilter.value;
                 const status = statusFilter.value;
+                const managerId = managerFilter ? managerFilter.value : '';
 
                 const filtered = complexData.filter(complex => {
                     const matchSearch = complex.name.toLowerCase().includes(searchTerm) || 
                                        complex.address.toLowerCase().includes(searchTerm);
                     const matchRegion = !region || complex.region === region;
                     const matchStatus = !status || complex.status === status;
-                    return matchSearch && matchRegion && matchStatus;
+                    const matchManager = !managerId || complex.managerId === managerId;
+                    return matchSearch && matchRegion && matchStatus && matchManager;
                 });
 
                 renderComplexGrid(filtered);
+                updateStats(filtered);
             };
 
             searchInput.addEventListener('input', filterData);
             regionFilter.addEventListener('change', filterData);
             statusFilter.addEventListener('change', filterData);
+            if (managerFilter) {
+                managerFilter.addEventListener('change', filterData);
+            }
         }
 
         // Show detail page
@@ -6622,6 +6741,9 @@
             if (navUsers) navUsers.classList.remove('active');
             const navDashboard = document.getElementById('navDashboard');
             if (navDashboard) navDashboard.classList.remove('active');
+            
+            // 담당자 필터 이벤트 설정
+            setupCalendarManagerFilter();
             
             // 캘린더 렌더링
             await renderMainCalendar();
