@@ -5656,15 +5656,40 @@
                     constructionTypes: c.construction_types || []
                 }));
 
-                renderComplexGrid(complexData);
-                setupSearch();
-                updateStats();
-                
-                // 담당자 필터 옵션 로드
+                // 담당자 필터 옵션 먼저 로드
                 await loadManagerFilter();
+                
+                // 필터링된 데이터로 렌더링
+                applyFilters();
+                setupSearch();
             } catch (err) {
                 console.error('단지 로드 실패:', err);
             }
+        }
+
+        // ===== 필터 적용 함수 =====
+        function applyFilters() {
+            const searchInput = document.getElementById('searchInput');
+            const regionFilter = document.getElementById('regionFilter');
+            const statusFilter = document.getElementById('statusFilter');
+            const managerFilter = document.getElementById('managerFilter');
+
+            const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+            const region = regionFilter ? regionFilter.value : '';
+            const status = statusFilter ? statusFilter.value : '';
+            const managerId = managerFilter ? managerFilter.value : '';
+
+            const filtered = complexData.filter(complex => {
+                const matchSearch = complex.name.toLowerCase().includes(searchTerm) || 
+                                   complex.address.toLowerCase().includes(searchTerm);
+                const matchRegion = !region || complex.region === region;
+                const matchStatus = !status || complex.status === status;
+                const matchManager = !managerId || complex.managerId === managerId;
+                return matchSearch && matchRegion && matchStatus && matchManager;
+            });
+
+            renderComplexGrid(filtered);
+            updateStats(filtered);
         }
 
         // ===== 담당자 필터 옵션 로드 =====
@@ -5700,9 +5725,17 @@
                 
                 if (managerFilter) {
                     managerFilter.innerHTML = `<option value="">전체 담당자</option>${options}`;
+                    // 관리자가 아니면 본인 계정으로 기본 선택
+                    if (!isAdmin() && currentUser) {
+                        managerFilter.value = currentUser.id;
+                    }
                 }
                 if (calendarManagerFilter) {
                     calendarManagerFilter.innerHTML = `<option value="">전체 담당자</option>${options}`;
+                    // 관리자가 아니면 본인 계정으로 기본 선택
+                    if (!isAdmin() && currentUser) {
+                        calendarManagerFilter.value = currentUser.id;
+                    }
                 }
             } catch (err) {
                 console.error('담당자 목록 로드 실패:', err);
@@ -6675,30 +6708,11 @@
             const statusFilter = document.getElementById('statusFilter');
             const managerFilter = document.getElementById('managerFilter');
 
-            const filterData = () => {
-                const searchTerm = searchInput.value.toLowerCase();
-                const region = regionFilter.value;
-                const status = statusFilter.value;
-                const managerId = managerFilter ? managerFilter.value : '';
-
-                const filtered = complexData.filter(complex => {
-                    const matchSearch = complex.name.toLowerCase().includes(searchTerm) || 
-                                       complex.address.toLowerCase().includes(searchTerm);
-                    const matchRegion = !region || complex.region === region;
-                    const matchStatus = !status || complex.status === status;
-                    const matchManager = !managerId || complex.managerId === managerId;
-                    return matchSearch && matchRegion && matchStatus && matchManager;
-                });
-
-                renderComplexGrid(filtered);
-                updateStats(filtered);
-            };
-
-            searchInput.addEventListener('input', filterData);
-            regionFilter.addEventListener('change', filterData);
-            statusFilter.addEventListener('change', filterData);
+            searchInput.addEventListener('input', applyFilters);
+            regionFilter.addEventListener('change', applyFilters);
+            statusFilter.addEventListener('change', applyFilters);
             if (managerFilter) {
-                managerFilter.addEventListener('change', filterData);
+                managerFilter.addEventListener('change', applyFilters);
             }
         }
 
