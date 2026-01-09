@@ -2731,15 +2731,31 @@
             }
 
             .stats-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
             }
 
             .stat-card {
-                padding: 16px;
+                padding: 12px;
+                min-height: auto;
             }
 
             .stat-value {
-                font-size: 28px;
+                font-size: 24px;
+                margin-bottom: 2px;
+            }
+
+            .stat-label {
+                font-size: 11px;
+            }
+
+            .stat-percent {
+                font-size: 11px;
+            }
+
+            .stat-urgent {
+                font-size: 10px;
+                padding: 2px 6px;
             }
 
             .complex-card {
