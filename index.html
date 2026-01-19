@@ -1026,6 +1026,13 @@
             padding: 12px;
             background: var(--bg-main);
             border-radius: var(--radius-md);
+            transition: all 0.2s ease;
+        }
+
+        .dashboard-activity-item:hover {
+            background: var(--bg-card);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transform: translateX(4px);
         }
 
         .dashboard-activity-avatar {
@@ -3736,41 +3743,45 @@
                 <div class="form-section-title">기본 정보</div>
                 <div class="form-group">
                     <label class="form-label">단지명 <span class="required">*</span></label>
-                    <input type="text" class="form-input" placeholder="예: 래미안 센트럴파크">
+                    <input type="text" class="form-input" id="newComplexName" placeholder="예: 래미안 센트럴파크">
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">지역 <span class="required">*</span></label>
-                        <select class="form-input">
+                        <select class="form-input" id="newComplexRegion">
                             <option value="">선택하세요</option>
                             <option value="서울">서울</option>
                             <option value="경기">경기</option>
                             <option value="인천">인천</option>
                             <option value="부산">부산</option>
+                            <option value="대구">대구</option>
+                            <option value="대전">대전</option>
+                            <option value="광주">광주</option>
+                            <option value="세종">세종</option>
+                            <option value="충남">충남</option>
+                            <option value="울산">울산</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">담당자 <span class="required">*</span></label>
-                        <select class="form-input">
+                        <select class="form-input" id="newComplexManager">
                             <option value="">선택하세요</option>
-                            <option value="김철수">김철수</option>
-                            <option value="박영희">박영희</option>
-                            <option value="이민호">이민호</option>
+                            <!-- 담당자 목록 동적 로드 -->
                         </select>
                     </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">주소</label>
-                    <input type="text" class="form-input" placeholder="상세 주소를 입력하세요">
+                    <input type="text" class="form-input" id="newComplexAddress" placeholder="상세 주소를 입력하세요">
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">관리소장명</label>
-                        <input type="text" class="form-input" placeholder="관리소장 이름">
+                        <input type="text" class="form-input" id="newComplexCaretaker" placeholder="관리소장 이름">
                     </div>
                     <div class="form-group">
                         <label class="form-label">연락처</label>
-                        <input type="text" class="form-input" placeholder="010-0000-0000">
+                        <input type="text" class="form-input" id="newComplexCaretakerPhone" placeholder="010-0000-0000">
                     </div>
                 </div>
 
@@ -3779,7 +3790,7 @@
                 
                 <div class="form-group">
                     <label class="form-label">공사 종류</label>
-                    <div class="checkbox-group">
+                    <div class="checkbox-group" id="newComplexConstructionTypes">
                         <label class="checkbox-item">
                             <input type="checkbox" value="아스팔트슁글 방수">
                             <span class="checkbox-label">아스팔트슁글 방수</span>
@@ -3846,7 +3857,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('addComplexModal')">취소</button>
-                <button class="btn btn-primary">단지 추가</button>
+                <button class="btn btn-primary" onclick="saveNewComplex()">단지 추가</button>
             </div>
         </div>
     </div>
@@ -3872,9 +3883,7 @@
                         <label class="form-label">방문자 <span class="required">*</span></label>
                         <select class="form-input" id="visitVisitor">
                             <option value="">선택하세요</option>
-                            <option value="김철수">김철수</option>
-                            <option value="박영희">박영희</option>
-                            <option value="이민호">이민호</option>
+                            <!-- 담당자 목록 동적 로드 -->
                         </select>
                     </div>
                 </div>
@@ -4804,7 +4813,7 @@
 
     <!-- 단지 정보 수정 모달 -->
     <div class="modal-overlay" id="editComplexModal">
-        <div class="modal">
+        <div class="modal" style="max-width: 600px;">
             <div class="modal-header">
                 <h2 class="modal-title">단지 정보 수정</h2>
                 <button class="modal-close" onclick="closeModal('editComplexModal')">
@@ -4813,14 +4822,66 @@
                     </svg>
                 </button>
             </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label class="form-label">관리소장</label>
-                    <input type="text" class="form-input" id="editCaretaker" placeholder="관리소장 이름">
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">단지명 <span class="required">*</span></label>
+                        <input type="text" class="form-input" id="editComplexName" placeholder="단지명">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">지역 <span class="required">*</span></label>
+                        <select class="form-input" id="editComplexRegion">
+                            <option value="">선택하세요</option>
+                            <option value="서울">서울</option>
+                            <option value="경기">경기</option>
+                            <option value="인천">인천</option>
+                            <option value="부산">부산</option>
+                            <option value="대구">대구</option>
+                            <option value="대전">대전</option>
+                            <option value="광주">광주</option>
+                            <option value="세종">세종</option>
+                            <option value="충남">충남</option>
+                            <option value="울산">울산</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">관리소 연락처</label>
-                    <input type="text" class="form-input" id="editCaretakerPhone" placeholder="02-1234-5678">
+                    <label class="form-label">주소</label>
+                    <input type="text" class="form-input" id="editComplexAddress" placeholder="상세 주소">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">담당자</label>
+                    <select class="form-input" id="editComplexManager">
+                        <option value="">선택하세요</option>
+                        <!-- 담당자 목록 동적 로드 -->
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">관리소장</label>
+                        <input type="text" class="form-input" id="editCaretaker" placeholder="관리소장 이름">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">관리소 연락처</label>
+                        <input type="text" class="form-input" id="editCaretakerPhone" placeholder="02-1234-5678">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">시공 공사</label>
+                    <div class="checkbox-group" id="editConstructionTypes">
+                        <label class="checkbox-label"><input type="checkbox" value="슬라브-우레탄"> 슬라브-우레탄</label>
+                        <label class="checkbox-label"><input type="checkbox" value="슬라브-PVC"> 슬라브-PVC</label>
+                        <label class="checkbox-label"><input type="checkbox" value="외벽 도장"> 외벽 도장</label>
+                        <label class="checkbox-label"><input type="checkbox" value="외벽 타일"> 외벽 타일</label>
+                        <label class="checkbox-label"><input type="checkbox" value="외벽 재도장 및 균열보수"> 외벽 재도장 및 균열보수</label>
+                        <label class="checkbox-label"><input type="checkbox" value="지하주차장 방수"> 지하주차장 방수</label>
+                        <label class="checkbox-label"><input type="checkbox" value="지하주차장 에폭시"> 지하주차장 에폭시</label>
+                        <label class="checkbox-label"><input type="checkbox" value="옥상 방수"> 옥상 방수</label>
+                        <label class="checkbox-label"><input type="checkbox" value="지하 방수"> 지하 방수</label>
+                        <label class="checkbox-label"><input type="checkbox" value="아스콘"> 아스콘</label>
+                        <label class="checkbox-label"><input type="checkbox" value="보도블럭"> 보도블럭</label>
+                        <label class="checkbox-label"><input type="checkbox" value="금속기와 방수"> 금속기와 방수</label>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">특이사항</label>
@@ -5081,34 +5142,111 @@
         }
 
         // ===== 단지 정보 수정 =====
-        function openEditComplexModal() {
-            document.getElementById('editCaretaker').value = currentComplex.caretaker || '';
-            document.getElementById('editCaretakerPhone').value = currentComplex.caretakerPhone || '';
+        async function openEditComplexModal() {
+            // 기존 데이터 채우기
+            document.getElementById('editComplexName').value = currentComplex.name || '';
+            document.getElementById('editComplexRegion').value = currentComplex.region || '';
+            document.getElementById('editComplexAddress').value = currentComplex.address || '';
+            document.getElementById('editCaretaker').value = currentComplex.caretaker === '-' ? '' : currentComplex.caretaker || '';
+            document.getElementById('editCaretakerPhone').value = currentComplex.caretakerPhone === '-' ? '' : currentComplex.caretakerPhone || '';
             document.getElementById('editComplexMemo').value = currentComplex.memo || '';
+            
+            // 담당자 목록 로드
+            await loadEditComplexManagerOptions();
+            
+            // 시공 공사 체크박스 설정
+            const checkboxes = document.querySelectorAll('#editConstructionTypes input[type="checkbox"]');
+            checkboxes.forEach(cb => {
+                cb.checked = currentComplex.constructionTypes && currentComplex.constructionTypes.includes(cb.value);
+            });
+            
             openModal('editComplexModal');
         }
 
+        // 단지 수정 모달용 담당자 목록 로드
+        async function loadEditComplexManagerOptions() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('users')
+                    .select('id, name, role')
+                    .in('role', ['대표', '팀장']);
+
+                if (error) throw error;
+
+                const orderMap = { '이승우': 1, '황윤선': 2, '조재연': 3, '한준엽': 4, '이필선': 5, '김성민': 6 };
+                const sortedData = data.sort((a, b) => (orderMap[a.name] || 99) - (orderMap[b.name] || 99));
+
+                const select = document.getElementById('editComplexManager');
+                select.innerHTML = `<option value="">선택하세요</option>` + 
+                    sortedData.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+                
+                // 현재 담당자 선택
+                if (currentComplex.managerId) {
+                    select.value = currentComplex.managerId;
+                }
+            } catch (err) {
+                console.error('담당자 목록 로드 실패:', err);
+            }
+        }
+
         async function saveComplexInfo() {
+            const name = document.getElementById('editComplexName').value;
+            const region = document.getElementById('editComplexRegion').value;
+            const address = document.getElementById('editComplexAddress').value;
+            const managerId = document.getElementById('editComplexManager').value;
             const caretaker = document.getElementById('editCaretaker').value;
             const caretakerPhone = document.getElementById('editCaretakerPhone').value;
             const memo = document.getElementById('editComplexMemo').value;
+            
+            // 시공 공사 체크박스 값 수집
+            const constructionTypes = [];
+            document.querySelectorAll('#editConstructionTypes input[type="checkbox"]:checked').forEach(cb => {
+                constructionTypes.push(cb.value);
+            });
+
+            if (!name || !region) {
+                alert('단지명과 지역은 필수입니다.');
+                return;
+            }
 
             try {
                 const { error } = await supabaseClient
                     .from('complexes')
                     .update({
+                        name: name,
+                        region: region,
+                        address: address || null,
+                        manager_id: managerId || null,
                         caretaker_name: caretaker || null,
                         caretaker_phone: caretakerPhone || null,
-                        memo: memo || null
+                        memo: memo || null,
+                        construction_types: constructionTypes.length > 0 ? constructionTypes : null
                     })
                     .eq('id', currentComplex.id);
 
                 if (error) throw error;
 
                 // 로컬 데이터 업데이트
+                currentComplex.name = name;
+                currentComplex.region = region;
+                currentComplex.address = address;
+                currentComplex.managerId = managerId;
                 currentComplex.caretaker = caretaker || '-';
                 currentComplex.caretakerPhone = caretakerPhone || '-';
                 currentComplex.memo = memo;
+                currentComplex.constructionTypes = constructionTypes;
+
+                // 담당자 이름 업데이트 (DB에서 가져오기)
+                if (managerId) {
+                    const { data: userData } = await supabaseClient
+                        .from('users')
+                        .select('name')
+                        .eq('id', managerId)
+                        .single();
+                    if (userData) {
+                        currentComplex.manager = userData.name;
+                    }
+                }
 
                 closeModal('editComplexModal');
                 renderDetailHeader();
@@ -5136,6 +5274,61 @@
             } catch (err) {
                 console.error('상태 변경 실패:', err);
                 alert('상태 변경에 실패했습니다.');
+            }
+        }
+
+        // ===== 새 단지 추가 =====
+        async function saveNewComplex() {
+            const name = document.getElementById('newComplexName').value;
+            const region = document.getElementById('newComplexRegion').value;
+            const managerId = document.getElementById('newComplexManager').value;
+            const address = document.getElementById('newComplexAddress').value;
+            const caretaker = document.getElementById('newComplexCaretaker').value;
+            const caretakerPhone = document.getElementById('newComplexCaretakerPhone').value;
+            
+            // 공사 종류 체크박스 값 수집
+            const constructionTypes = [];
+            document.querySelectorAll('#newComplexConstructionTypes input[type="checkbox"]:checked').forEach(cb => {
+                constructionTypes.push(cb.value);
+            });
+
+            if (!name || !region || !managerId) {
+                alert('단지명, 지역, 담당자는 필수입니다.');
+                return;
+            }
+
+            try {
+                const { error } = await supabaseClient
+                    .from('complexes')
+                    .insert({
+                        name: name,
+                        region: region,
+                        manager_id: managerId,
+                        address: address || null,
+                        caretaker_name: caretaker || null,
+                        caretaker_phone: caretakerPhone || null,
+                        construction_types: constructionTypes.length > 0 ? constructionTypes : null,
+                        status: '정상'
+                    });
+
+                if (error) throw error;
+
+                // 입력 필드 초기화
+                document.getElementById('newComplexName').value = '';
+                document.getElementById('newComplexRegion').value = '';
+                document.getElementById('newComplexAddress').value = '';
+                document.getElementById('newComplexCaretaker').value = '';
+                document.getElementById('newComplexCaretakerPhone').value = '';
+                document.querySelectorAll('#newComplexConstructionTypes input[type="checkbox"]').forEach(cb => {
+                    cb.checked = false;
+                });
+
+                closeModal('addComplexModal');
+                await loadComplexes();
+                alert('새 단지가 추가되었습니다.');
+            } catch (err) {
+                console.error('단지 추가 실패:', err);
+                alert('단지 추가에 실패했습니다.');
             }
         }
 
@@ -5315,8 +5508,9 @@
 
                 listEl.innerHTML = data.map(v => {
                     const avatarName = getAvatarName(v.visitor?.name);
+                    const complexId = v.complex?.id || '';
                     return `
-                        <div class="dashboard-activity-item">
+                        <div class="dashboard-activity-item" onclick="goToComplex('${complexId}')" style="cursor: pointer;">
                             <div class="dashboard-activity-avatar">${avatarName}</div>
                             <div class="dashboard-activity-info">
                                 <div class="dashboard-activity-title">${v.complex?.name || '-'}</div>
@@ -5329,6 +5523,20 @@
             } catch (err) {
                 console.error('최근 방문 로드 실패:', err);
             }
+        }
+
+        // 대시보드에서 단지 상세로 이동
+        async function goToComplex(complexId) {
+            if (!complexId) return;
+            
+            // 단지 데이터가 없으면 로드
+            if (complexData.length === 0) {
+                await loadComplexes();
+            }
+            
+            // 단지 관리 페이지로 이동 후 상세 페이지 표시
+            showMainPage();
+            showDetail(complexId);
         }
 
         // 담당자 관리 페이지 표시
@@ -5795,6 +6003,7 @@
         // ===== 방문 기록 저장 (DB) =====
         async function saveVisitRecord() {
             const visitDate = document.getElementById('visitDate').value;
+            const visitVisitor = document.getElementById('visitVisitor').value;
             const visitPurpose = document.getElementById('visitPurpose').value;
             const visitMemo = document.getElementById('visitMemo').value;
             const visitDefectType = document.getElementById('visitDefectType').value;
@@ -5803,8 +6012,8 @@
             // 사진 데이터 가져오기
             const photos = await getPhotosBase64('visitPhotos');
 
-            if (!visitDate || !visitPurpose) {
-                alert('방문일과 방문 목적을 입력해주세요.');
+            if (!visitDate || !visitVisitor || !visitPurpose) {
+                alert('방문일, 방문자, 방문 목적을 입력해주세요.');
                 return;
             }
 
@@ -5813,7 +6022,7 @@
                     .from('visit_records')
                     .insert({
                         complex_id: currentComplex.id,
-                        visitor_id: currentUser.id,
+                        visitor_id: visitVisitor,
                         visit_date: visitDate,
                         purpose: visitPurpose,
                         defect_type: visitDefectType || null,
@@ -5836,7 +6045,7 @@
                         .from('schedules')
                         .insert({
                             complex_id: currentComplex.id,
-                            user_id: currentUser.id,
+                            user_id: visitVisitor,
                             title: `${currentComplex.name} 방문 예정`,
                             schedule_date: nextVisitDate,
                             schedule_type: 'visit',
@@ -7077,8 +7286,80 @@
         }
 
         // Modal functions
-        function openModal(modalId) {
+        async function openModal(modalId) {
             document.getElementById(modalId).classList.add('active');
+            
+            // 방문 기록 모달 열 때 담당자 목록 로드
+            if (modalId === 'addVisitModal') {
+                await loadVisitorOptions();
+            }
+            
+            // 단지 추가 모달 열 때 담당자 목록 로드 + 체크박스 초기화
+            if (modalId === 'addComplexModal') {
+                await loadNewComplexManagerOptions();
+                // 공사 종류 체크박스 모두 해제
+                document.querySelectorAll('#addComplexModal .checkbox-group input[type="checkbox"]').forEach(cb => {
+                    cb.checked = false;
+                });
+            }
+        }
+
+        // 단지 추가 모달용 담당자 목록 로드
+        async function loadNewComplexManagerOptions() {
+            try {
+                const select = document.getElementById('newComplexManager');
+                
+                // 관리자: 전체 담당자 목록 표시
+                if (isAdmin()) {
+                    const { data, error } = await supabaseClient
+                        .from('users')
+                        .select('id, name, role')
+                        .in('role', ['대표', '팀장']);
+
+                    if (error) throw error;
+
+                    const orderMap = { '이승우': 1, '황윤선': 2, '조재연': 3, '한준엽': 4, '이필선': 5, '김성민': 6 };
+                    const sortedData = data.sort((a, b) => (orderMap[a.name] || 99) - (orderMap[b.name] || 99));
+
+                    select.innerHTML = `<option value="">선택하세요</option>` + 
+                        sortedData.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+                } else {
+                    // 일반 사용자: 본인만 표시 (고정)
+                    select.innerHTML = `<option value="${currentUser.id}">${currentUser.name}</option>`;
+                }
+            } catch (err) {
+                console.error('담당자 목록 로드 실패:', err);
+            }
+        }
+
+        // 방문자 옵션 로드 (담당자 계정 기반)
+        async function loadVisitorOptions() {
+            try {
+                const select = document.getElementById('visitVisitor');
+                
+                // 관리자: 전체 담당자 목록 표시
+                if (isAdmin()) {
+                    const { data, error } = await supabaseClient
+                        .from('users')
+                        .select('id, name, role')
+                        .in('role', ['대표', '팀장'])
+                        .order('name');
+
+                    if (error) throw error;
+
+                    // 순서 정렬
+                    const orderMap = { '이승우': 1, '황윤선': 2, '조재연': 3, '한준엽': 4, '이필선': 5, '김성민': 6 };
+                    const sortedData = data.sort((a, b) => (orderMap[a.name] || 99) - (orderMap[b.name] || 99));
+
+                    select.innerHTML = `<option value="">선택하세요</option>` + 
+                        sortedData.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+                } else {
+                    // 일반 사용자: 본인만 표시 (고정)
+                    select.innerHTML = `<option value="${currentUser.id}">${currentUser.name}</option>`;
+                }
+            } catch (err) {
+                console.error('방문자 목록 로드 실패:', err);
+            }
         }
 
         function closeModal(modalId) {
@@ -7183,7 +7464,7 @@
                         <div class="notification-item-desc">📍 ${notif.complexName} · ${notif.desc}</div>
                         <div class="notification-item-time">@${notif.manager} · ${notif.date}</div>
                         <div class="notification-item-action">
-                            <button class="notif-btn notif-btn-primary" onclick="goToComplex('${notif.complexId}')">단지 보기</button>
+                            <button class="notif-btn notif-btn-primary" onclick="goToComplexFromNotification('${notif.complexId}')">단지 보기</button>
                             <button class="notif-btn notif-btn-secondary" onclick="dismissNotification('${notif.id}')">확인</button>
                         </div>
                     </div>
@@ -7227,7 +7508,7 @@
         }
 
         // Go to complex from notification
-        function goToComplex(complexId) {
+        function goToComplexFromNotification(complexId) {
             toggleNotificationPanel();
             showDetail(complexId);
         }
