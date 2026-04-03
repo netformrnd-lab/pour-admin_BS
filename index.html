@@ -7507,11 +7507,11 @@
         let allDefectReports = [];
 
         async function loadDefectReports() {
-            if (!selectedComplex) return;
+            if (!currentComplex) return;
             const { data, error } = await supabaseClient
                 .from('defect_reports')
                 .select('*')
-                .eq('complex_id', selectedComplex.id)
+                .eq('complex_id', currentComplex.id)
                 .order('created_at', { ascending: false });
 
             if (!error && data) {
@@ -7548,21 +7548,112 @@
                 const ss = DEFECT_STATUS_STYLE[r.status] || DEFECT_STATUS_STYLE['접수'];
                 const date = new Date(r.created_at);
                 const dateStr = date.getFullYear() + '.' + String(date.getMonth()+1).padStart(2,'0') + '.' + String(date.getDate()).padStart(2,'0');
+                const schedBadge = r.schedule_status === '확정' ? '<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:#F0FDF4;color:#16A34A;font-weight:600;margin-left:8px;">일정 확정</span>'
+                    : r.schedule_status === '조정요청' ? '<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:#FFF7ED;color:#EA580C;font-weight:600;margin-left:8px;">조정 요청</span>'
+                    : r.scheduled_date ? '<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:#EDF2FF;color:#2563EB;font-weight:600;margin-left:8px;">일정 배정됨</span>' : '';
                 return `
-                    <div style="background: white; border: 1px solid #EBF0F7; border-radius: 12px; padding: 16px; cursor: pointer;" onmouseover="this.style.borderColor='#2563EB'" onmouseout="this.style.borderColor='#EBF0F7'">
+                    <div style="background: white; border: 1px solid #EBF0F7; border-radius: 12px; padding: 16px; cursor: pointer;" onclick="openDefectDetail('${r.id}')" onmouseover="this.style.borderColor='#2563EB'" onmouseout="this.style.borderColor='#EBF0F7'">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <span style="font-weight: 700; font-size: 14px; color: #111827;">${r.title || '제목 없음'}</span>
+                            <span style="font-weight: 700; font-size: 14px; color: #111827;">${r.title || '제목 없음'}${schedBadge}</span>
                             <span style="font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 6px; background: ${ss.bg}; color: ${ss.color};">${r.status}</span>
                         </div>
                         <div style="display: flex; gap: 16px; font-size: 12px; color: #6B7280;">
                             <span>📌 ${r.defect_type || '-'}</span>
                             <span>📍 ${r.location || '-'}</span>
                             <span>📅 ${dateStr}</span>
+                            ${r.scheduled_date ? `<span>🗓️ 방문: ${r.scheduled_date}</span>` : ''}
                         </div>
                         ${r.description ? `<div style="font-size: 13px; color: #9CA3AF; margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${r.description}</div>` : ''}
                     </div>
                 `;
             }).join('');
+        }
+
+        // 하자 상세 모달 열기
+        async function openDefectDetail(defectId) {
+            const report = allDefectReports.find(r => r.id === defectId);
+            if (!report) return;
+
+            const statusOptions = ['접수', '방문예정', '담당자배정', '보수예정', '완료'].map(s =>
+                `<option value="${s}" ${report.status === s ? 'selected' : ''}>${s}</option>`
+            ).join('');
+
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay active';
+            modal.id = 'defectDetailModal';
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+            modal.innerHTML = `
+                <div class="modal" style="max-width: 500px;">
+                    <div class="modal-header">
+                        <h2 class="modal-title">${report.title || '하자 접수 상세'}</h2>
+                        <button class="modal-close" onclick="document.getElementById('defectDetailModal').remove()">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label class="form-label">하자 유형</label>
+                            <div style="font-size: 14px; font-weight: 600;">${report.defect_type || '-'}</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">위치</label>
+                            <div style="font-size: 14px;">${report.location || '-'}</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">설명</label>
+                            <div style="font-size: 14px; color: var(--text-secondary);">${report.description || '-'}</div>
+                        </div>
+                        <div class="form-divider"></div>
+                        <div class="form-group">
+                            <label class="form-label">상태 변경</label>
+                            <select class="form-input" id="defectStatusSelect">${statusOptions}</select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">방문 예정일</label>
+                            <input type="date" class="form-input" id="defectScheduledDate" value="${report.scheduled_date || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">일정 상태</label>
+                            <div style="font-size: 13px; color: var(--text-secondary);">
+                                ${report.schedule_status || '미확정'}
+                                ${report.schedule_memo ? ` — "${report.schedule_memo}"` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="document.getElementById('defectDetailModal').remove()">취소</button>
+                        <button class="btn btn-primary" onclick="saveDefectUpdate('${report.id}')">저장</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        // 하자 상태/일정 저장
+        async function saveDefectUpdate(defectId) {
+            const status = document.getElementById('defectStatusSelect').value;
+            const scheduledDate = document.getElementById('defectScheduledDate').value;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('defect_reports')
+                    .update({
+                        status: status,
+                        scheduled_date: scheduledDate || null,
+                    })
+                    .eq('id', defectId);
+
+                if (error) throw error;
+
+                document.getElementById('defectDetailModal').remove();
+                await loadDefectReports();
+                alert('저장되었습니다.');
+            } catch (err) {
+                console.error('하자 업데이트 실패:', err);
+                alert('저장에 실패했습니다.');
+            }
         }
 
         // Modal functions
