@@ -5412,6 +5412,16 @@
             link.click();
         }
 
+        function downloadDetailQR() {
+            const qrEl = document.getElementById('detailQR');
+            const canvas = qrEl.querySelector('canvas');
+            if (!canvas) { alert('QR 코드가 없습니다.'); return; }
+            const link = document.createElement('a');
+            link.download = `danjion-${currentComplex.inviteCode}-qr.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
         // ===== 새 단지 추가 =====
         async function saveNewComplex() {
             const name = document.getElementById('newComplexName').value;
@@ -6023,7 +6033,9 @@
                     caretaker: c.caretaker_name || '-',
                     caretakerPhone: c.caretaker_phone || '-',
                     memo: c.memo || '',
-                    constructionTypes: c.construction_types || []
+                    constructionTypes: c.construction_types || [],
+                    inviteCode: c.invite_code || '',
+                    slug: c.slug || ''
                 }));
 
                 // 담당자 필터 옵션 먼저 로드
@@ -7203,7 +7215,62 @@
                         <span class="meta-value editable">${currentComplex.memo || '메모 없음'}</span>
                     </div>
                 </div>
+                ${currentComplex.inviteCode ? `
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+                        <span style="font-size: 15px; font-weight: 700; color: var(--text-primary);">앱 초대 정보</span>
+                        <span style="font-size: 11px; padding: 3px 8px; background: #e8f5e9; color: #2e7d32; border-radius: 10px; font-weight: 600;">활성</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 16px; align-items: start;">
+                        <div>
+                            <div style="font-size: 12px; color: var(--text-tertiary); font-weight: 600; margin-bottom: 6px;">초대 코드</div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 20px; font-weight: 700; letter-spacing: 3px; color: var(--primary);">${currentComplex.inviteCode}</span>
+                                <button class="btn btn-secondary btn-sm" onclick="copyToClipboard('${currentComplex.inviteCode}', '초대 코드')" style="padding: 4px 10px; font-size: 11px;">복사</button>
+                            </div>
+                            <div style="margin-top: 12px;">
+                                <div style="font-size: 12px; color: var(--text-tertiary); font-weight: 600; margin-bottom: 6px;">초대 링크</div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 13px; color: var(--text-secondary);">danjion://join/${currentComplex.inviteCode}</span>
+                                    <button class="btn btn-secondary btn-sm" onclick="copyToClipboard('danjion://join/${currentComplex.inviteCode}', '초대 링크')" style="padding: 4px 10px; font-size: 11px;">복사</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: var(--text-tertiary); font-weight: 600; margin-bottom: 6px;">QR 코드</div>
+                            <div id="detailQR" style="padding: 8px; background: white; border: 1px solid var(--border); border-radius: 8px; display: inline-block;"></div>
+                            <div style="margin-top: 8px;">
+                                <button class="btn btn-secondary btn-sm" onclick="downloadDetailQR()" style="padding: 4px 10px; font-size: 11px;">PNG 다운로드</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                ` : `
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 15px; font-weight: 700; color: var(--text-primary);">앱 초대 정보</span>
+                        <span style="font-size: 11px; padding: 3px 8px; background: #f3f4f6; color: #6b7280; border-radius: 10px; font-weight: 600;">미설정</span>
+                    </div>
+                    <p style="font-size: 13px; color: var(--text-tertiary); margin-top: 8px;">정보 수정에서 초대 코드를 설정할 수 있습니다.</p>
+                </div>
+                `}
             `;
+
+            // QR 코드 렌더링 (초대 코드가 있을 때)
+            if (currentComplex.inviteCode) {
+                setTimeout(() => {
+                    const qrEl = document.getElementById('detailQR');
+                    if (qrEl) {
+                        new QRCode(qrEl, {
+                            text: 'danjion://join/' + currentComplex.inviteCode,
+                            width: 100,
+                            height: 100,
+                            colorDark: '#215a65',
+                            colorLight: '#ffffff',
+                        });
+                    }
+                }, 100);
+            }
         }
 
         // Render visit timeline
