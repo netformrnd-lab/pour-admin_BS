@@ -9,6 +9,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- QR Code -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -590,6 +592,18 @@
         .btn-sm {
             padding: 8px 12px;
             font-size: 13px;
+        }
+
+        .defect-filter {
+            background: white;
+            border: 1px solid #E5E7EB;
+            color: #6B7280;
+            cursor: pointer;
+        }
+        .defect-filter.active {
+            background: #2563EB;
+            border-color: #2563EB;
+            color: white;
         }
 
         /* 담당자 관리 페이지 */
@@ -3623,6 +3637,7 @@
                 <div class="tab-nav">
                     <div class="tab-item active" onclick="switchTab('timeline')">방문 기록</div>
                     <div class="tab-item" onclick="switchTab('calendar')">일정 캘린더</div>
+                    <div class="tab-item" onclick="switchTab('defect')">하자 접수</div>
                     <div class="tab-item" onclick="switchTab('manager')">담당자 정보</div>
                 </div>
 
@@ -3676,6 +3691,27 @@
                             <div id="scheduleList">
                                 <!-- 일정 목록 렌더링 -->
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="defectTab">
+                    <div class="timeline">
+                        <div class="timeline-header">
+                            <h3 class="timeline-title">하자 접수 현황</h3>
+                        </div>
+                        <!-- 상태 필터 -->
+                        <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
+                            <button class="btn btn-sm defect-filter active" data-filter="all" onclick="filterDefects('all', this)" style="font-size: 12px; padding: 6px 12px; border-radius: 20px;">전체</button>
+                            <button class="btn btn-sm defect-filter" data-filter="접수" onclick="filterDefects('접수', this)" style="font-size: 12px; padding: 6px 12px; border-radius: 20px;">접수</button>
+                            <button class="btn btn-sm defect-filter" data-filter="방문예정" onclick="filterDefects('방문예정', this)" style="font-size: 12px; padding: 6px 12px; border-radius: 20px;">방문예정</button>
+                            <button class="btn btn-sm defect-filter" data-filter="담당자배정" onclick="filterDefects('담당자배정', this)" style="font-size: 12px; padding: 6px 12px; border-radius: 20px;">담당자배정</button>
+                            <button class="btn btn-sm defect-filter" data-filter="보수예정" onclick="filterDefects('보수예정', this)" style="font-size: 12px; padding: 6px 12px; border-radius: 20px;">보수예정</button>
+                            <button class="btn btn-sm defect-filter" data-filter="완료" onclick="filterDefects('완료', this)" style="font-size: 12px; padding: 6px 12px; border-radius: 20px;">완료</button>
+                        </div>
+                        <!-- 하자 접수 리스트 -->
+                        <div id="defectReportList" style="display: flex; flex-direction: column; gap: 10px;">
+                            <!-- 동적 렌더링 -->
                         </div>
                     </div>
                 </div>
@@ -3852,7 +3888,32 @@
                 <div class="form-section-title">특이사항</div>
                 <div class="form-group">
                     <label class="form-label">특이사항 메모</label>
-                    <textarea class="form-input form-textarea" placeholder="특이사항이 있으면 입력하세요"></textarea>
+                    <textarea class="form-input form-textarea" id="newComplexMemo" placeholder="특이사항이 있으면 입력하세요"></textarea>
+                </div>
+
+                <div class="form-divider"></div>
+                <div class="form-section-title">입주민 초대 설정</div>
+                <p style="font-size: 13px; color: #6B7280; margin-bottom: 12px;">단지명을 입력하면 초대 코드가 자동 생성됩니다. 단지 추가 후 관리소장에게 전달해주세요.</p>
+                <div class="form-group">
+                    <label class="form-label">초대 코드</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="text" class="form-input" id="newComplexInviteCode" style="font-weight: 700; letter-spacing: 2px; flex: 1;" placeholder="단지명 입력 시 자동 생성" maxlength="6">
+                        <button class="btn btn-secondary btn-sm" onclick="copyToClipboard(document.getElementById('newComplexInviteCode').value, '초대 코드')" style="white-space: nowrap;">복사</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">초대 링크</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="text" class="form-input" id="newComplexInviteLink" readonly style="background: #F9FAFB; flex: 1;" placeholder="단지명 입력 시 자동 생성">
+                        <button class="btn btn-secondary btn-sm" onclick="copyToClipboard(document.getElementById('newComplexInviteLink').value, '초대 링크')" style="white-space: nowrap;">복사</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">QR 코드</label>
+                    <div style="display: flex; gap: 12px; align-items: flex-start;">
+                        <div id="newComplexQR" style="padding: 8px; background: white; border: 1px solid #E5E7EB; border-radius: 8px; display: inline-block;"></div>
+                        <button class="btn btn-secondary btn-sm" onclick="downloadQR()" style="white-space: nowrap; margin-top: 8px;">PNG 다운로드</button>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -5277,6 +5338,80 @@
             }
         }
 
+        // ===== 초대 코드 자동 생성 =====
+        function generateInviteCode(name) {
+            if (!name || name.trim().length < 1) return '';
+            // 한글 초성 추출 또는 영문 앞글자
+            const clean = name.replace(/\s/g, '');
+            let prefix = '';
+            for (let i = 0; i < clean.length && prefix.length < 2; i++) {
+                const c = clean.charCodeAt(i);
+                if (c >= 0xAC00 && c <= 0xD7A3) {
+                    // 한글 초성 추출
+                    const initials = 'GGGNGDDDRMLMBBBSSSOJJJCCKTTPHH';
+                    const eng = 'GKKNGDDTRLMLBPPSSSJJJCKKTHPH';
+                    const idx = Math.floor((c - 0xAC00) / 588);
+                    const chosung = ['G','KK','N','D','TT','R','M','B','PP','S','SS','O','J','JJ','C','K','T','P','H'];
+                    prefix += chosung[idx].charAt(0);
+                } else {
+                    prefix += clean[i].toUpperCase();
+                }
+            }
+            if (prefix.length < 2) prefix = prefix.padEnd(2, 'X');
+            const num = String(Math.floor(1000 + Math.random() * 9000));
+            return prefix.substring(0, 2) + num;
+        }
+
+        function generateSlug(name) {
+            // 간단 slug: 한글은 romanize 대신 그대로 URL 인코딩, 영문은 소문자 변환
+            return name.trim().toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^a-z0-9가-힣\-]/g, '');
+        }
+
+        // 단지명 입력 시 초대 코드/링크/QR 자동 생성
+        let newComplexQRInstance = null;
+        document.addEventListener('DOMContentLoaded', () => {
+            const nameInput = document.getElementById('newComplexName');
+            if (nameInput) {
+                nameInput.addEventListener('input', () => {
+                    const code = generateInviteCode(nameInput.value);
+                    document.getElementById('newComplexInviteCode').value = code;
+                    document.getElementById('newComplexInviteLink').value = code ? 'danjion://join/' + code : '';
+                    // QR 생성
+                    const qrEl = document.getElementById('newComplexQR');
+                    qrEl.innerHTML = '';
+                    newComplexQRInstance = null;
+                    if (code) {
+                        newComplexQRInstance = new QRCode(qrEl, {
+                            text: 'danjion://join/' + code,
+                            width: 120,
+                            height: 120,
+                            colorDark: '#1E1B4B',
+                            colorLight: '#ffffff',
+                        });
+                    }
+                });
+            }
+        });
+
+        function copyToClipboard(text, label) {
+            if (!text) { alert('복사할 내용이 없습니다.'); return; }
+            navigator.clipboard.writeText(text).then(() => {
+                alert(label + '가 복사되었습니다: ' + text);
+            });
+        }
+
+        function downloadQR() {
+            const qrEl = document.getElementById('newComplexQR');
+            const canvas = qrEl.querySelector('canvas');
+            if (!canvas) { alert('QR 코드가 없습니다.'); return; }
+            const link = document.createElement('a');
+            link.download = 'danjion-invite-qr.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
         // ===== 새 단지 추가 =====
         async function saveNewComplex() {
             const name = document.getElementById('newComplexName').value;
@@ -5285,7 +5420,9 @@
             const address = document.getElementById('newComplexAddress').value;
             const caretaker = document.getElementById('newComplexCaretaker').value;
             const caretakerPhone = document.getElementById('newComplexCaretakerPhone').value;
-            
+            const inviteCode = document.getElementById('newComplexInviteCode').value;
+            const memo = document.getElementById('newComplexMemo')?.value || '';
+
             // 공사 종류 체크박스 값 수집
             const constructionTypes = [];
             document.querySelectorAll('#newComplexConstructionTypes input[type="checkbox"]:checked').forEach(cb => {
@@ -5298,6 +5435,8 @@
             }
 
             try {
+                const slug = generateSlug(name);
+
                 const { error } = await supabaseClient
                     .from('complexes')
                     .insert({
@@ -5308,7 +5447,10 @@
                         caretaker_name: caretaker || null,
                         caretaker_phone: caretakerPhone || null,
                         construction_types: constructionTypes.length > 0 ? constructionTypes : null,
-                        status: '정상'
+                        status: '정상',
+                        slug: slug || null,
+                        invite_code: inviteCode || null,
+                        memo: memo || null,
                     });
 
                 if (error) throw error;
@@ -5319,13 +5461,17 @@
                 document.getElementById('newComplexAddress').value = '';
                 document.getElementById('newComplexCaretaker').value = '';
                 document.getElementById('newComplexCaretakerPhone').value = '';
+                document.getElementById('newComplexMemo').value = '';
+                document.getElementById('newComplexInviteCode').value = '';
+                document.getElementById('newComplexInviteLink').value = '';
+                document.getElementById('newComplexQR').innerHTML = '';
                 document.querySelectorAll('#newComplexConstructionTypes input[type="checkbox"]').forEach(cb => {
                     cb.checked = false;
                 });
 
                 closeModal('addComplexModal');
                 await loadComplexes();
-                alert('새 단지가 추가되었습니다.');
+                alert('새 단지가 추가되었습니다.\n초대 코드: ' + inviteCode);
             } catch (err) {
                 console.error('단지 추가 실패:', err);
                 alert('단지 추가에 실패했습니다.');
@@ -7280,9 +7426,76 @@
         function switchTab(tabName) {
             document.querySelectorAll('.tab-item').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
+
             event.target.classList.add('active');
             document.getElementById(tabName + 'Tab').classList.add('active');
+
+            // 하자 접수 탭 열 때 데이터 로드
+            if (tabName === 'defect') {
+                loadDefectReports();
+            }
+        }
+
+        // ===== 하자 접수 =====
+        let allDefectReports = [];
+
+        async function loadDefectReports() {
+            if (!selectedComplex) return;
+            const { data, error } = await supabaseClient
+                .from('defect_reports')
+                .select('*')
+                .eq('complex_id', selectedComplex.id)
+                .order('created_at', { ascending: false });
+
+            if (!error && data) {
+                allDefectReports = data;
+                renderDefectReports(data);
+            }
+        }
+
+        function filterDefects(status, btn) {
+            document.querySelectorAll('.defect-filter').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (status === 'all') {
+                renderDefectReports(allDefectReports);
+            } else {
+                renderDefectReports(allDefectReports.filter(r => r.status === status));
+            }
+        }
+
+        const DEFECT_STATUS_STYLE = {
+            '접수': { bg: '#EDF2FF', color: '#2563EB' },
+            '방문예정': { bg: '#EDF2FF', color: '#2563EB' },
+            '담당자배정': { bg: '#F3E8FF', color: '#7C3AED' },
+            '보수예정': { bg: '#FFF7ED', color: '#EA580C' },
+            '완료': { bg: '#F0FDF4', color: '#16A34A' },
+        };
+
+        function renderDefectReports(reports) {
+            const container = document.getElementById('defectReportList');
+            if (reports.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 40px; color: #9CA3AF;">하자 접수 내역이 없습니다.</div>';
+                return;
+            }
+            container.innerHTML = reports.map(r => {
+                const ss = DEFECT_STATUS_STYLE[r.status] || DEFECT_STATUS_STYLE['접수'];
+                const date = new Date(r.created_at);
+                const dateStr = date.getFullYear() + '.' + String(date.getMonth()+1).padStart(2,'0') + '.' + String(date.getDate()).padStart(2,'0');
+                return `
+                    <div style="background: white; border: 1px solid #EBF0F7; border-radius: 12px; padding: 16px; cursor: pointer;" onmouseover="this.style.borderColor='#2563EB'" onmouseout="this.style.borderColor='#EBF0F7'">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-weight: 700; font-size: 14px; color: #111827;">${r.title || '제목 없음'}</span>
+                            <span style="font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 6px; background: ${ss.bg}; color: ${ss.color};">${r.status}</span>
+                        </div>
+                        <div style="display: flex; gap: 16px; font-size: 12px; color: #6B7280;">
+                            <span>📌 ${r.defect_type || '-'}</span>
+                            <span>📍 ${r.location || '-'}</span>
+                            <span>📅 ${dateStr}</span>
+                        </div>
+                        ${r.description ? `<div style="font-size: 13px; color: #9CA3AF; margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${r.description}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
         }
 
         // Modal functions
