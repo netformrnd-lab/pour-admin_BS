@@ -7659,6 +7659,7 @@
             const status = document.getElementById('defectStatusSelect').value;
             const scheduledDate = document.getElementById('defectScheduledDate').value;
             const assigneeId = document.getElementById('defectAssigneeSelect').value;
+            const report = allDefectReports.find(r => r.id === defectId);
 
             try {
                 const { error } = await supabaseClient
@@ -7672,8 +7673,30 @@
 
                 if (error) throw error;
 
+                // 방문 예정일이 새로 설정되었으면 schedules에 자동 추가
+                if (scheduledDate && report && scheduledDate !== report.scheduled_date) {
+                    // 기존 연결된 일정 삭제 후 새로 추가
+                    await supabaseClient
+                        .from('schedules')
+                        .delete()
+                        .eq('complex_id', currentComplex.id)
+                        .eq('description', `하자접수: ${defectId}`);
+
+                    await supabaseClient
+                        .from('schedules')
+                        .insert({
+                            complex_id: currentComplex.id,
+                            user_id: assigneeId || currentUser.id,
+                            title: `[하자] ${report.title || '하자 방문'}`,
+                            schedule_date: scheduledDate,
+                            schedule_type: 'visit',
+                            description: `하자접수: ${defectId}`,
+                        });
+                }
+
                 document.getElementById('defectDetailModal').remove();
                 await loadDefectReports();
+                await renderCalendarWithSchedules();
                 alert('저장되었습니다.');
             } catch (err) {
                 console.error('하자 업데이트 실패:', err);
