@@ -7574,9 +7574,20 @@
             const report = allDefectReports.find(r => r.id === defectId);
             if (!report) return;
 
+            const users = await loadUsers();
+            const assigneeOptions = '<option value="">미배정</option>' + users.map(u =>
+                `<option value="${u.id}" ${report.assigned_user_id === u.id ? 'selected' : ''}>${u.name} (${u.role})</option>`
+            ).join('');
+
             const statusOptions = ['접수', '방문예정', '담당자배정', '보수예정', '완료'].map(s =>
                 `<option value="${s}" ${report.status === s ? 'selected' : ''}>${s}</option>`
             ).join('');
+
+            const schedStatusLabel = report.schedule_status === '확정'
+                ? '<span style="color:#16A34A;font-weight:700;">확정</span>'
+                : report.schedule_status === '조정요청'
+                ? '<span style="color:#EA580C;font-weight:700;">조정 요청</span>'
+                : '<span style="color:#6B7280;">미확정</span>';
 
             const modal = document.createElement('div');
             modal.className = 'modal-overlay active';
@@ -7611,14 +7622,19 @@
                             <select class="form-input" id="defectStatusSelect">${statusOptions}</select>
                         </div>
                         <div class="form-group">
+                            <label class="form-label">담당자 배정</label>
+                            <select class="form-input" id="defectAssigneeSelect">${assigneeOptions}</select>
+                            <p style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">담당자를 선택하면 상태가 자동으로 '담당자배정'으로 변경됩니다.</p>
+                        </div>
+                        <div class="form-group">
                             <label class="form-label">방문 예정일</label>
                             <input type="date" class="form-input" id="defectScheduledDate" value="${report.scheduled_date || ''}">
                         </div>
                         <div class="form-group">
-                            <label class="form-label">일정 상태</label>
-                            <div style="font-size: 13px; color: var(--text-secondary);">
-                                ${report.schedule_status || '미확정'}
-                                ${report.schedule_memo ? ` — "${report.schedule_memo}"` : ''}
+                            <label class="form-label">일정 상태 (관리소장 응답)</label>
+                            <div style="font-size: 13px;">
+                                ${schedStatusLabel}
+                                ${report.schedule_memo ? `<div style="margin-top:6px;padding:8px 12px;background:#FFF7ED;border-radius:8px;font-size:12px;color:#EA580C;">"${report.schedule_memo}"</div>` : ''}
                             </div>
                         </div>
                     </div>
@@ -7629,12 +7645,20 @@
                 </div>
             `;
             document.body.appendChild(modal);
+
+            // 담당자 선택 시 상태 자동 변경
+            document.getElementById('defectAssigneeSelect').addEventListener('change', function() {
+                if (this.value) {
+                    document.getElementById('defectStatusSelect').value = '담당자배정';
+                }
+            });
         }
 
         // 하자 상태/일정 저장
         async function saveDefectUpdate(defectId) {
             const status = document.getElementById('defectStatusSelect').value;
             const scheduledDate = document.getElementById('defectScheduledDate').value;
+            const assigneeId = document.getElementById('defectAssigneeSelect').value;
 
             try {
                 const { error } = await supabaseClient
@@ -7642,6 +7666,7 @@
                     .update({
                         status: status,
                         scheduled_date: scheduledDate || null,
+                        assigned_user_id: assigneeId || null,
                     })
                     .eq('id', defectId);
 
