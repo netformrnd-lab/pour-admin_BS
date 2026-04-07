@@ -7680,7 +7680,7 @@
                         .from('schedules')
                         .delete()
                         .eq('complex_id', currentComplex.id)
-                        .eq('description', `하자접수: ${defectId}`);
+                        .like('description', `%defect:${defectId}%`);
 
                     await supabaseClient
                         .from('schedules')
@@ -7690,7 +7690,7 @@
                             title: `[하자] ${report.title || '하자 방문'}`,
                             schedule_date: scheduledDate,
                             schedule_type: 'visit',
-                            description: `하자접수: ${defectId}`,
+                            description: `${report.defect_type || '하자'} 현장 확인 - ${report.location || '위치 미정'} (defect:${defectId})`,
                         });
                 }
 
