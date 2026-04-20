@@ -7616,6 +7616,20 @@
                             <label class="form-label">설명</label>
                             <div style="font-size: 14px; color: var(--text-secondary);">${report.description || '-'}</div>
                         </div>
+                        ${report.photos && report.photos.length > 0 ? `
+                        <div class="form-group">
+                            <label class="form-label">하자 사진 (${report.photos.length}장)</label>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
+                                ${report.photos.map(url => `
+                                    <img src="${url}"
+                                        style="width: 120px; height: 120px; object-fit: cover; border-radius: 10px; border: 1px solid #EBF0F7; cursor: pointer;"
+                                        onclick="openPhotoModal('${url}')"
+                                        onerror="this.style.display='none'"
+                                    />
+                                `).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
                         <div class="form-divider"></div>
                         <div class="form-group">
                             <label class="form-label">상태 변경</label>
